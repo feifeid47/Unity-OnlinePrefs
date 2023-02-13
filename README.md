@@ -41,23 +41,24 @@ private async void Awake()
 }
 
 // 从云端获取数据的示例实现
-private void OnLoadRequest(Action<string> callback)
+private void OnLoadRequest(Action<byte[]> callback)
 {
-    string userID = "ff";
-    var request = UnityWebRequest.Get($"http://localhost:5208/{userID}");
+    string userID = "XXX";
+    var request = UnityWebRequest.Get($"http://localhost:9005/record/{userID}");
     request.SendWebRequest().completed += _ =>
     {
-        callback.Invoke(Encoding.UTF8.GetString(request.downloadHandler.data));
+        var data = request.result == UnityWebRequest.Result.Success ? request.downloadHandler.data : null;
+        callback.Invoke(data);
         request.Dispose();
     };
 }
 
 // 将数据保存到云端的示例实现
-private void OnSaveRequest(string data)
+private void OnSaveRequest(byte[] data)
 {
-    string userID = "ff";
-    var request = UnityWebRequest.Post($"http://localhost:5208/{userID}", "POST");
-    request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(data));
+    string userID = "XXX";
+    var request = UnityWebRequest.Post($"http://localhost:9005/record/{userID}", "POST");
+    request.uploadHandler = new UploadHandlerRaw(data);
     request.SendWebRequest().completed += _ =>
     {
         request.Dispose();
