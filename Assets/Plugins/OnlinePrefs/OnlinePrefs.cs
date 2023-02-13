@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -9,8 +10,8 @@ namespace Feif
     {
         private static PrefsData data = new PrefsData();
 
-        public static event Action<Action<string>> OnLoadRequest;
-        public static event Action<string> OnSaveRequest;
+        public static event Action<Action<byte[]>> OnLoadRequest;
+        public static event Action<byte[]> OnSaveRequest;
         public static event Action OnValueChanged;
 
         public static async Task LoadAsync()
@@ -18,7 +19,7 @@ namespace Feif
             var completionSource = new TaskCompletionSource<string>();
             OnLoadRequest?.Invoke(response =>
             {
-                completionSource.SetResult(response);
+                completionSource.SetResult(Encoding.UTF8.GetString(response));
             });
             var data = await completionSource.Task;
             if (string.IsNullOrEmpty(data)) return;
@@ -29,7 +30,7 @@ namespace Feif
 
         public static void Save()
         {
-            OnSaveRequest?.Invoke(JsonConvert.SerializeObject(data));
+            OnSaveRequest?.Invoke(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)));
         }
 
         public static void SetInt(string key, int value)
