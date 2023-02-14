@@ -19,7 +19,13 @@ namespace Feif
             var completionSource = new TaskCompletionSource<string>();
             OnLoadRequest?.Invoke(response =>
             {
-                completionSource.SetResult(Encoding.UTF8.GetString(response));
+                if(response == null)
+                {
+                    completionSource.SetResult(null);
+                }else
+                {
+                    completionSource.SetResult(Encoding.UTF8.GetString(response));
+                }
             });
             var data = await completionSource.Task;
             if (string.IsNullOrEmpty(data)) return;
