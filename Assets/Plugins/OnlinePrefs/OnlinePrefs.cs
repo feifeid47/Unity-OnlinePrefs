@@ -12,17 +12,18 @@ namespace Feif
 
         public static event Action<Action<byte[]>> OnLoadRequest;
         public static event Action<byte[]> OnSaveRequest;
-        public static event Action OnValueChanged;
+        public static event Action<string> OnValueChanged;
 
         public static async Task LoadAsync()
         {
             var completionSource = new TaskCompletionSource<string>();
             OnLoadRequest?.Invoke(response =>
             {
-                if(response == null)
+                if (response == null)
                 {
                     completionSource.SetResult(null);
-                }else
+                }
+                else
                 {
                     completionSource.SetResult(Encoding.UTF8.GetString(response));
                 }
@@ -32,6 +33,18 @@ namespace Feif
             var prefs = JsonConvert.DeserializeObject<PrefsData>(data);
             if (prefs == null) return;
             OnlinePrefs.data = prefs;
+            foreach (var item in OnlinePrefs.data.IntData)
+            {
+                PlayerPrefs.SetInt(item.Key, item.Value);
+            }
+            foreach (var item in OnlinePrefs.data.FloatData)
+            {
+                PlayerPrefs.SetFloat(item.Key, item.Value);
+            }
+            foreach (var item in OnlinePrefs.data.StringData)
+            {
+                PlayerPrefs.SetString(item.Key, item.Value);
+            }
         }
 
         public static void Save()
@@ -41,7 +54,7 @@ namespace Feif
 
         public static void SetInt(string key, int value)
         {
-            if (PlayerPrefs.GetInt(key) != value) OnValueChanged?.Invoke();
+            if (PlayerPrefs.GetInt(key) != value) OnValueChanged?.Invoke(key);
             PlayerPrefs.SetInt(key, value);
             data.IntData[key] = value;
         }
@@ -58,7 +71,7 @@ namespace Feif
 
         public static void SetString(string key, string value)
         {
-            if (PlayerPrefs.GetString(key) != value) OnValueChanged?.Invoke();
+            if (PlayerPrefs.GetString(key) != value) OnValueChanged?.Invoke(key);
 
             PlayerPrefs.SetString(key, value);
             data.StringData[key] = value;
@@ -76,7 +89,7 @@ namespace Feif
 
         public static void SetFloat(string key, float value)
         {
-            if (PlayerPrefs.GetFloat(key) != value) OnValueChanged?.Invoke();
+            if (PlayerPrefs.GetFloat(key) != value) OnValueChanged?.Invoke(key);
 
             PlayerPrefs.SetFloat(key, value);
             data.FloatData[key] = value;
@@ -96,14 +109,14 @@ namespace Feif
         {
             PlayerPrefs.DeleteAll();
             data.DeleteAll();
-            OnValueChanged?.Invoke();
+            OnValueChanged?.Invoke(null);
         }
 
         public static void DeleteKey(string key)
         {
             PlayerPrefs.DeleteKey(key);
             data.DeleteKey(key);
-            OnValueChanged?.Invoke();
+            OnValueChanged?.Invoke(key);
         }
 
         public static bool HasKey(string key)
