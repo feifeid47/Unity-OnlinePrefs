@@ -40,17 +40,18 @@ private async void Awake()
     _ = OnlinePrefs.GetFloat("XXX");
 }
 
-// 从云端获取数据的示例实现
-private void OnLoadRequest(Action<byte[]> callback)
+private Task<byte[]> OnLoadRequest()
 {
     string userID = "XXX";
     var request = UnityWebRequest.Get($"http://localhost:9005/record/{userID}");
+    var completionSource = new TaskCompletionSource<byte[]>();
     request.SendWebRequest().completed += _ =>
     {
         var data = request.result == UnityWebRequest.Result.Success ? request.downloadHandler.data : null;
-        callback.Invoke(data);
+        completionSource.SetResult(data);
         request.Dispose();
     };
+    return completionSource.Task;
 }
 
 // 将数据保存到云端的示例实现

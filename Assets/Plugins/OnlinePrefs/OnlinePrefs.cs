@@ -10,41 +10,23 @@ namespace Feif
     {
         private static PrefsData data = new PrefsData();
 
-        public static event Action<Action<byte[]>> OnLoadRequest;
+        public static event Func<Task<byte[]>> OnLoadRequest;
         public static event Action<byte[]> OnSaveRequest;
         public static event Action<string> OnValueChanged;
 
         public static async Task LoadAsync()
         {
             var completionSource = new TaskCompletionSource<string>();
-            OnLoadRequest?.Invoke(response =>
-            {
-                if (response == null)
-                {
-                    completionSource.SetResult(null);
-                }
-                else
-                {
-                    completionSource.SetResult(Encoding.UTF8.GetString(response));
-                }
-            });
-            var data = await completionSource.Task;
-            if (string.IsNullOrEmpty(data)) return;
-            var prefs = JsonConvert.DeserializeObject<PrefsData>(data);
+            var data = await OnLoadRequest?.Invoke();
+            if (data == null) return;
+            var json = Encoding.UTF8.GetString(data);
+            if (string.IsNullOrEmpty(json)) return;
+            var prefs = JsonConvert.DeserializeObject<PrefsData>(json);
             if (prefs == null) return;
             OnlinePrefs.data = prefs;
-            foreach (var item in OnlinePrefs.data.IntData)
-            {
-                PlayerPrefs.SetInt(item.Key, item.Value);
-            }
-            foreach (var item in OnlinePrefs.data.FloatData)
-            {
-                PlayerPrefs.SetFloat(item.Key, item.Value);
-            }
-            foreach (var item in OnlinePrefs.data.StringData)
-            {
-                PlayerPrefs.SetString(item.Key, item.Value);
-            }
+            foreach (var item in OnlinePrefs.data.IntData) PlayerPrefs.SetInt(item.Key, item.Value);
+            foreach (var item in OnlinePrefs.data.FloatData) PlayerPrefs.SetFloat(item.Key, item.Value);
+            foreach (var item in OnlinePrefs.data.StringData) PlayerPrefs.SetString(item.Key, item.Value);
         }
 
         public static void Save()
