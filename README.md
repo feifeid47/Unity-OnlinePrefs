@@ -28,8 +28,8 @@ private async void Awake()
     OnlinePrefs.OnLoadRequest += OnLoadRequest;
     OnlinePrefs.OnSaveRequest += OnSaveRequest;
     OnlinePrefs.OnValueChanged += OnValueChanged;
-    // 加载云端数据
-    await OnlinePrefs.LoadAsync();
+    // 初始化OnlinePrefs
+    await OnlinePrefs.Initialize();
 
     OnlinePrefs.SetInt("XXX", 0);
     OnlinePrefs.SetString("XXX", "XXX");

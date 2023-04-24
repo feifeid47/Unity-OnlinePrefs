@@ -14,96 +14,105 @@ namespace Feif
         public static event Action<byte[]> OnSaveRequest;
         public static event Action<string> OnValueChanged;
 
-        public static async Task LoadAsync()
+        public static async Task Initialize()
         {
-            var completionSource = new TaskCompletionSource<string>();
-            var data = await OnLoadRequest?.Invoke();
-            if (data == null) return;
-            var json = Encoding.UTF8.GetString(data);
-            if (string.IsNullOrEmpty(json)) return;
-            var prefs = JsonConvert.DeserializeObject<PrefsData>(json);
-            if (prefs == null) return;
-            OnlinePrefs.data = prefs;
-            foreach (var item in OnlinePrefs.data.IntData) PlayerPrefs.SetInt(item.Key, item.Value);
-            foreach (var item in OnlinePrefs.data.FloatData) PlayerPrefs.SetFloat(item.Key, item.Value);
-            foreach (var item in OnlinePrefs.data.StringData) PlayerPrefs.SetString(item.Key, item.Value);
+            if (PlayerPrefs.GetInt("OnlinePrefs-IsSync", 0) == 0)
+            {
+                var completionSource = new TaskCompletionSource<string>();
+                var raw = await OnLoadRequest?.Invoke();
+                if (raw == null) return;
+                var json = Encoding.UTF8.GetString(raw);
+                if (string.IsNullOrEmpty(json)) return;
+                PlayerPrefs.SetString("OnlinePrefs", json);
+                var prefs = JsonConvert.DeserializeObject<PrefsData>(json);
+                if (prefs == null) return;
+                data = prefs;
+                PlayerPrefs.SetInt("OnlinePrefs-IsSync", 1);
+            }
+            else
+            {
+                var json = PlayerPrefs.GetString("OnlinePrefs-Data", null);
+                if (string.IsNullOrEmpty(json)) return;
+                var prefs = JsonConvert.DeserializeObject<PrefsData>(json);
+                if (prefs == null) return;
+                data = prefs;
+            }
         }
 
         public static void Save()
         {
             OnSaveRequest?.Invoke(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data)));
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
         }
 
         public static void SetInt(string key, int value)
         {
-            if (PlayerPrefs.GetInt(key) != value) OnValueChanged?.Invoke(key);
-            PlayerPrefs.SetInt(key, value);
+            if (data.IntData.ContainsKey(key) && data.IntData[key] == value) return;
             data.IntData[key] = value;
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
+            OnValueChanged?.Invoke(key);
         }
 
         public static int GetInt(string key, int defaultValue = 0)
         {
-            if (!data.IntData.TryGetValue(key, out var value))
+            if (data.IntData.TryGetValue(key, out var value))
             {
-                value = PlayerPrefs.GetInt(key, defaultValue);
-                SetInt(key, value);
+                return value;
             }
-            return value;
+            return defaultValue;
         }
 
         public static void SetString(string key, string value)
         {
-            if (PlayerPrefs.GetString(key) != value) OnValueChanged?.Invoke(key);
-
-            PlayerPrefs.SetString(key, value);
+            if (data.StringData.ContainsKey(key) && data.StringData[key] == value) return;
             data.StringData[key] = value;
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
+            OnValueChanged?.Invoke(key);
         }
 
         public static string GetString(string key, string defaultValue = "")
         {
-            if (!data.StringData.TryGetValue(key, out var value))
+            if (data.StringData.TryGetValue(key, out var value))
             {
-                value = PlayerPrefs.GetString(key, defaultValue);
-                SetString(key, value);
+                return value;
             }
-            return value;
+            return defaultValue;
         }
 
         public static void SetFloat(string key, float value)
         {
-            if (PlayerPrefs.GetFloat(key) != value) OnValueChanged?.Invoke(key);
-
-            PlayerPrefs.SetFloat(key, value);
+            if (data.FloatData.ContainsKey(key) && data.FloatData[key] == value) return;
             data.FloatData[key] = value;
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
+            OnValueChanged?.Invoke(key);
         }
 
         public static float GetFloat(string key, float defaultValue = 0)
         {
-            if (!data.FloatData.TryGetValue(key, out var value))
+            if (data.FloatData.TryGetValue(key, out var value))
             {
-                value = PlayerPrefs.GetFloat(key, defaultValue);
-                SetFloat(key, value);
+                return value;
             }
-            return value;
+            return defaultValue;
         }
 
         public static void DeleteAll()
         {
-            PlayerPrefs.DeleteAll();
             data.DeleteAll();
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
             OnValueChanged?.Invoke(null);
         }
 
         public static void DeleteKey(string key)
         {
-            PlayerPrefs.DeleteKey(key);
             data.DeleteKey(key);
+            PlayerPrefs.SetString("OnlinePrefs-Data", JsonConvert.SerializeObject(data));
             OnValueChanged?.Invoke(key);
         }
 
         public static bool HasKey(string key)
         {
-            return PlayerPrefs.HasKey(key);
+            return data.IntData.ContainsKey(key) || data.FloatData.ContainsKey(key) || data.StringData.ContainsKey(key);
         }
     }
 }
