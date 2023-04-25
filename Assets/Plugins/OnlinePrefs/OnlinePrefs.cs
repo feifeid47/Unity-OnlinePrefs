@@ -55,7 +55,15 @@ namespace Feif
 
         public static int GetInt(string key, int defaultValue = 0)
         {
-            if (data.IntData.TryGetValue(key, out var value))
+            int value;
+            if (PlayerPrefs.HasKey(key))
+            {
+                value = PlayerPrefs.GetInt(key, defaultValue);
+                SetInt(key, value);
+                PlayerPrefs.DeleteKey(key);
+                return value;
+            }
+            if (data.IntData.TryGetValue(key, out value))
             {
                 return value;
             }
@@ -72,7 +80,15 @@ namespace Feif
 
         public static string GetString(string key, string defaultValue = "")
         {
-            if (data.StringData.TryGetValue(key, out var value))
+            string value;
+            if (PlayerPrefs.HasKey(key))
+            {
+                value = PlayerPrefs.GetString(key, defaultValue);
+                SetString(key, value);
+                PlayerPrefs.DeleteKey(key);
+                return value;
+            }
+            if (data.StringData.TryGetValue(key, out value))
             {
                 return value;
             }
@@ -89,7 +105,15 @@ namespace Feif
 
         public static float GetFloat(string key, float defaultValue = 0)
         {
-            if (data.FloatData.TryGetValue(key, out var value))
+            float value;
+            if (PlayerPrefs.HasKey(key))
+            {
+                value = PlayerPrefs.GetFloat(key, defaultValue);
+                SetFloat(key, value);
+                PlayerPrefs.DeleteKey(key);
+                return value;
+            }
+            if (data.FloatData.TryGetValue(key, out value))
             {
                 return value;
             }
